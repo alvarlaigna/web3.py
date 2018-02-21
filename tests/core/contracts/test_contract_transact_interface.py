@@ -4,6 +4,7 @@ import pytest
 
 from eth_utils import (
     force_bytes,
+    to_int,
 )
 
 from web3.utils.empty import (
@@ -72,6 +73,30 @@ def test_transacting_with_contract_no_arguments(web3, math_contract, transact, c
                        contract_function='counter')
 
     assert final_value - initial_value == 1
+
+
+@pytest.mark.parametrize('block_as', (hex, int))
+def test_call_old_block(web3, math_contract, block_as):
+    lookup_txn = math_contract.functions.counter().buildTransaction()
+    initial_block_num = web3.eth.getBlock('latest').number
+
+    original_call_result = web3.eth.call(lookup_txn, block_as(initial_block_num))
+    initial_value = to_int(original_call_result)
+    assert initial_value == 0
+
+    math_contract.functions.increment().transact()
+
+    block_num = web3.eth.getBlock('latest').number
+    assert block_num == initial_block_num + 1
+
+    expected_value = initial_value + 1
+    assert math_contract.functions.counter().call() == expected_value
+
+    raw_call_result = web3.eth.call(lookup_txn, block_as(block_num))
+    assert to_int(raw_call_result) == expected_value
+
+    initial_raw_call_result = web3.eth.call(lookup_txn, block_as(initial_block_num))
+    assert to_int(initial_raw_call_result) == initial_value
 
 
 @pytest.mark.parametrize(
