@@ -113,7 +113,10 @@ def validate_address(value):
     if not is_hex_address(value):
         raise InvalidAddress("Address must be 20 bytes, as a hex string with a 0x prefix", value)
     if not is_checksum_address(value):
-        raise InvalidAddress("Address has an invalid EIP checksum", value)
+        # Shamelessly ignore EIP checksum validation
+        # https://github.com/ethereum/web3.py/issues/674
+        # raise InvalidAddress("Address has an invalid EIP checksum", value)
+        pass
 
 
 def has_one_val(*args, **kwargs):
